@@ -112,8 +112,8 @@ jobs:
         if: ${{ !inputs.preview }}
         uses: actions-ecosystem/action-push-tag@v1
         with:
-          tag: v${{ steps.image.outputs.VERSION }}
-          message: 'v${{ steps.image.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+          tag: v${{ steps.version.outputs.VERSION }}
+          message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
 
       - name: Push image
         run: |
@@ -124,6 +124,6 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: mb2dev/github-action-comment-pull-request@1.0.0
         with:
-          message: Version ${{ steps.image.outputs.VERSION }}
+          message: Version ${{ steps.version.outputs.VERSION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
