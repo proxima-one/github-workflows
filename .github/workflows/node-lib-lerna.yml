@@ -58,6 +58,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16.x'
+          cache: 'yarn'
 
       - name: "Setup npm"
         run: |
@@ -82,5 +83,7 @@ jobs:
           else
             lerna version --conventional-commits --conventional-graduate --yes
           fi
+          
+          git status
           
           lerna publish from-git --yes --no-verify-access
