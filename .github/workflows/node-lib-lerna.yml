@@ -77,13 +77,13 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor}}@users.noreply.github.com"
           
+          git status
+          
           if [ "${{ inputs.prerelease }}" = "true" ]; then
             lerna version --conventional-commits --conventional-prerelease --preid ${{ inputs.preid }} --yes
             
           else
             lerna version --conventional-commits --conventional-graduate --yes
           fi
-          
-          git status
           
           lerna publish from-git --yes --no-verify-access
