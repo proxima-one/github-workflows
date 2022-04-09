@@ -1,0 +1,86 @@
+name: node-lib-lerna
+on:
+  workflow_call:
+    inputs:
+      publish:
+        required: false
+        default: false
+        type: boolean
+      prerelease:
+        required: false
+        default: false
+        type: boolean
+      preid:
+        required: false
+        default: beta
+        type: string
+    secrets:
+      CI_NPM_TOKEN:
+        required: true
+      CI_PUBLIC_NPM_TOKEN:
+        required: false
+jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+          cache: 'yarn'
+
+      - name: "Setup npm"
+        run: |
+          npm set @proxima-one:registry=https://npm.pkg.github.com
+          npm set "//npm.pkg.github.com/:_authToken=${{ secrets.CI_NPM_TOKEN }}"
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Test
+        run: yarn test
+
+  publish:
+    if: ${{ inputs.publish }}
+    needs: quick-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Checkout all branches and tags, needed for lerna
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: "Setup npm"
+        run: |
+          npm set @proxima-one:registry=https://npm.pkg.github.com
+          npm set "//npm.pkg.github.com/:_authToken=${{ secrets.CI_NPM_TOKEN }}"
+          npm set "//registry.npmjs.org/:_authToken=${{ secrets.CI_PUBLIC_NPM_TOKEN }}"
+
+      - name: Install Dependencies
+        run: |
+          yarn install
+
+      - name: "Version and publish"
+        env:
+          GH_TOKEN: ${{ secrets.CI_NPM_TOKEN }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor}}@users.noreply.github.com"
+          
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            lerna version --conventional-commits --conventional-prerelease --preid ${{ inputs.preid }} --yes
+            
+          else
+            lerna version --conventional-commits --conventional-graduate --yes
+          fi
+          
+          lerna publish from-git --yes --no-verify-access
