@@ -1,0 +1,134 @@
+name: node-streaming-app
+on:
+  workflow_call:
+    inputs:
+      appName:
+        required: true
+        type: string
+      publish:
+        required: false
+        default: false
+        type: boolean
+      preview:
+        required: false
+        default: false
+        type: boolean
+      tagMessage:
+        required: false
+        default: "Release"
+        type: string
+      dockerfilePath:
+        required: false
+        default: ./deployment/Dockerfile
+        type: string
+      dockerRepo:
+        required: false
+        default: proxima.one/streaming-app
+        type: string
+    secrets:
+      CI_NPM_TOKEN:
+        required: true
+      DOCKER_REGISTRY_URL:
+        required: true
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
+      
+jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+          cache: 'yarn'
+
+      - name: "Setup npm"
+        run: |
+          npm set @proxima-one:registry=https://npm.pkg.github.com
+          npm set "//npm.pkg.github.com/:_authToken=${{ secrets.CI_NPM_TOKEN }}"
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Test
+        run: yarn test
+
+  publish:
+    if: ${{ inputs.publish }}
+    needs: quick-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: "Setup npm"
+        run: |
+          npm set @proxima-one:registry=https://npm.pkg.github.com
+          npm set "//npm.pkg.github.com/:_authToken=${{ secrets.CI_NPM_TOKEN }}"
+
+      - name: Docker Login
+        run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
+
+      - name: "Read Version"
+        id: version
+        run: |
+          VERSION=$(cat ./VERSION)
+          if [ "${{ inputs.preview }}" = "true" ]; then
+            IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
+          else
+            IMAGE_TAG=${{ inputs.appName }}-$VERSION
+          fi
+
+          IMAGE_ID=${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo }}
+          IMAGE_FULL_NAME=$IMAGE_ID:$IMAGE_TAG
+
+          echo VERSION=$VERSION
+          echo IMAGE_ID=$IMAGE_ID
+          echo IMAGE_TAG=$IMAGE_TAG
+          echo IMAGE_FULL_NAME=$IMAGE_FULL_NAME
+
+          echo "::set-output name=VERSION::$VERSION"
+          echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
+          echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
+          echo "::set-output name=IMAGE_ID::$IMAGE_ID"
+
+      - name: Build Image
+        run: |
+          DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
+
+      - name: Push tags
+        if: ${{ !inputs.preview }}
+        uses: actions-ecosystem/action-push-tag@v1
+        with:
+          tag: v${{ steps.version.outputs.VERSION }}
+          message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+
+      - name: Push image
+        run: |
+          docker tag image ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+          docker push ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+
+      - name: Comment a version
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: mb2dev/github-action-comment-pull-request@1.0.0
+        with:
+          message: |
+            Released new version.
+
+            App: ${{ inputs.appName }}
+            Version: ${{ steps.version.outputs.IMAGE_TAG }}
+            Image: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
