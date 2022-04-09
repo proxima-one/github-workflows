@@ -124,6 +124,11 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: mb2dev/github-action-comment-pull-request@1.0.0
         with:
-          message: Version ${{ steps.version.outputs.VERSION }}
+          message: |
+            Released new version.
+
+            App: ${{ inputs.appName }}
+            Version: ${{ steps.version.outputs.IMAGE_TAG }}
+            Image: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
