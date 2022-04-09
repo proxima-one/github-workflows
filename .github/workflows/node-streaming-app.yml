@@ -121,7 +121,7 @@ jobs:
           docker push ${{ steps.version.outputs.IMAGE_FULL_NAME }}
 
       - name: Comment a version
-        if: github.event_name == 'pull_request'
+        if: ${{ github.event_name == 'pull_request' }}
         uses: mb2dev/github-action-comment-pull-request@1.0.0
         with:
           message: Version ${{ steps.image.outputs.VERSION }}
