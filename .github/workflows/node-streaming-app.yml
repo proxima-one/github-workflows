@@ -108,7 +108,7 @@ jobs:
           DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
 
       - name: Push tags
-        if: ${{ !inputs.preview && inputs.publish }}
+        if: ${{ !inputs.preview }}
         uses: actions-ecosystem/action-push-tag@v1
         with:
           tag: v${{ steps.image.outputs.VERSION }}
@@ -118,4 +118,4 @@ jobs:
         run: |
           docker tag image ${{ steps.version.outputs.IMAGE_FULL_NAME }}
           docker push ${{ steps.version.outputs.IMAGE_FULL_NAME }}
-          
+
