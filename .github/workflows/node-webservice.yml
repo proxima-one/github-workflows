@@ -41,12 +41,15 @@ on:
       CI_NPM_TOKEN:
         required: false
       DOCKER_REGISTRY_URL:
-        required: true
+        required: false
       DOCKER_USERNAME:
-        required: true
+        required: false
       DOCKER_PASSWORD:
-        required: true
-      
+        required: false
+      GOOGLE_CREDENTIALS:
+        required: false
+      PULUMI_ACCESS_TOKEN:
+        required: false
 jobs:
   quick-check:
     runs-on: ubuntu-latest
