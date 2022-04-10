@@ -134,6 +134,7 @@ jobs:
           message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
 
       - name: Push image
+        if: ${{ !inputs.preview }}
         run: |
           docker tag image ${{ steps.version.outputs.IMAGE_FULL_NAME }}
           docker push ${{ steps.version.outputs.IMAGE_FULL_NAME }}
