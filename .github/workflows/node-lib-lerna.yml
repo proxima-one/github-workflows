@@ -82,7 +82,7 @@ jobs:
 
           echo "Publishing canary version"
 
-          lerna publish --canary --preid ${{ inputs.preid }} --yes --no-verify-access
+          lerna publish --canary --preid ${{ inputs.preid }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access
 
       - name: "Version and publish"
         if: ${{ !inputs.preview }}
