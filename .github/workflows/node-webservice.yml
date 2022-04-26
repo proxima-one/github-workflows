@@ -126,12 +126,12 @@ jobs:
         run: |
           DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
 
-      - name: Push tags
-        if: ${{ !inputs.preview }}
-        uses: actions-ecosystem/action-push-tag@v1
-        with:
-          tag: v${{ steps.version.outputs.VERSION }}
-          message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+#       - name: Push tags
+#         if: ${{ !inputs.preview }}
+#         uses: actions-ecosystem/action-push-tag@v1
+#         with:
+#           tag: v${{ steps.version.outputs.VERSION }}
+#           message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
 
       - name: Push image
         run: |
