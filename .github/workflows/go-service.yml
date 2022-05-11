@@ -44,6 +44,10 @@ on:
         required: false
       NETRC_PASS:
         required: false
+    outputs:
+      publishedVersion: ${{ jobs.publish.outputs.publishedVersion }}
+      publishedImageTag: ${{ jobs.publish.outputs.publishedImageTag }}
+
 
 jobs:
   quick-check:
