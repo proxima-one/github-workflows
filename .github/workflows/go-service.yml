@@ -51,9 +51,9 @@ on:
       publishedImageTag: 
         description: "Image tag of published image"
         value: ${{ jobs.publish.outputs.publishedImageTag }}
-      publishedImageFullName: 
-        description: "Full name of published image"
-        value: ${{ jobs.publish.outputs.publishedImageFullName }}
+      publishedImageId: 
+        description: "Id (url without Docker registry) of published image"
+        value: ${{ jobs.publish.outputs.publishedImageId }}
 
 jobs:
   quick-check:
@@ -89,7 +89,7 @@ jobs:
     outputs:
       publishedVersion: ${{ steps.version.outputs.VERSION }}
       publishedImageTag: ${{ steps.version.outputs.IMAGE_TAG }}
-      publishedImageFullName: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+      publishedImageId: ${{ steps.version.outputs.IMAGE_ID }}
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
@@ -113,12 +113,12 @@ jobs:
           else
             IMAGE_TAG=${{ inputs.appName }}-$VERSION
           fi
-          IMAGE_ID=${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo }}
-          IMAGE_FULL_NAME=$IMAGE_ID:$IMAGE_TAG
+          IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
+          IMAGE_FULL_NAME=${{ secrets.DOCKER_REGISTRY_URL }}$IMAGE_ID
           echo VERSION=$VERSION
           echo IMAGE_ID=$IMAGE_ID
-          echo IMAGE_TAG=$IMAGE_TAG
           echo IMAGE_FULL_NAME=$IMAGE_FULL_NAME
+          echo IMAGE_TAG=$IMAGE_TAG
           echo "::set-output name=VERSION::$VERSION"
           echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
           echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
