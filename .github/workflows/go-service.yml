@@ -1,0 +1,138 @@
+name: go-service
+on:
+  workflow_call:
+    inputs:
+      appName:
+        required: true
+        type: string
+      publish:
+        required: false
+        default: false
+        type: boolean
+      preview:
+        required: false
+        default: false
+        type: boolean
+      deploy:
+        required: false
+        default: false
+        type: boolean
+      tagMessage:
+        required: false
+        default: "Release"
+        type: string
+      dockerfilePath:
+        required: false
+        default: ./Dockerfile
+        type: string
+      dockerRepo:
+        required: false
+        default: proxima.one/services
+        type: string
+    secrets:
+      DOCKER_REGISTRY_URL:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      GOOGLE_CREDENTIALS:
+        required: false
+      PROXIMA_API:
+        required: false
+      NETRC_USER:
+        required: false
+      NETRC_PASS:
+        required: false
+
+jobs:
+  quick-check:
+    name: Golang Tests
+    runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/proxima-one/block-indexer-api/api
+      API_ACCESS_TOKEN: ${{ secrets.PROXIMA_API }}
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Setup credentials
+        run: git config --global url.https://$API_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
+
+      - name: Install dependencies
+        run: go get ./...
+
+      - name: Unit Tests
+        run: go test --short ./...
+
+  publish:
+    if: ${{ inputs.publish }}
+    needs: quick-check
+    outputs:
+      publishedVersion: ${{ steps.version.outputs.VERSION }}
+      publishedImageTag: ${{ steps.version.outputs.IMAGE_TAG }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - name: "Write .netrc"
+        # env:
+        #   NETRC_USER: ${{ secrets.NETRC_USER }}
+        #   NETRC_PASS: ${{ secrets.NETRC_PASS }}
+        run: echo "machine github.com login ${{ secrets.NETRC_USER }} password ${{ secrets.NETRC_PASS }}" > ./.netrc
+
+      - name: Docker Login
+        run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
+
+      - name: "Read Version"
+        id: version
+        run: |
+          VERSION=$(cat ./VERSION)
+          if [ "${{ inputs.preview }}" = "true" ]; then
+            IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
+          else
+            IMAGE_TAG=${{ inputs.appName }}-$VERSION
+          fi
+          IMAGE_ID=${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo }}
+          IMAGE_FULL_NAME=$IMAGE_ID:$IMAGE_TAG
+          echo VERSION=$VERSION
+          echo IMAGE_ID=$IMAGE_ID
+          echo IMAGE_TAG=$IMAGE_TAG
+          echo IMAGE_FULL_NAME=$IMAGE_FULL_NAME
+          echo "::set-output name=VERSION::$VERSION"
+          echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
+          echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
+          echo "::set-output name=IMAGE_ID::$IMAGE_ID"
+      - name: Build Image
+        run: |
+          DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
+      - name: Push tags
+        if: ${{ !inputs.preview }}
+        uses: actions-ecosystem/action-push-tag@v1
+        with:
+          tag: v${{ steps.version.outputs.VERSION }}
+          message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+
+      - name: Push image
+        run: |
+          docker tag image ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+          docker push ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+      - name: Comment a version
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: mb2dev/github-action-comment-pull-request@1.0.0
+        with:
+          message: |
+            Released new version.
+            App: ${{ inputs.appName }}
+            Version: ${{ steps.version.outputs.IMAGE_TAG }}
+            Image: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
