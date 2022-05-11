@@ -45,8 +45,12 @@ on:
       NETRC_PASS:
         required: false
     outputs:
-      publishedVersion: ${{ jobs.publish.outputs.publishedVersion }}
-      publishedImageTag: ${{ jobs.publish.outputs.publishedImageTag }}
+      publishedVersion: 
+        description: "Version of published image"
+        value: ${{ jobs.publish.outputs.publishedVersion }}
+      publishedImageTag: 
+        description: "Image tag of published image"
+        value: ${{ jobs.publish.outputs.publishedImageTag }}
 
 
 jobs:
