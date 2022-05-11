@@ -51,7 +51,9 @@ on:
       publishedImageTag: 
         description: "Image tag of published image"
         value: ${{ jobs.publish.outputs.publishedImageTag }}
-
+      publishedImageFullName: 
+        description: "Full name of published image"
+        value: ${{ jobs.publish.outputs.publishedImageFullName }}
 
 jobs:
   quick-check:
@@ -87,6 +89,7 @@ jobs:
     outputs:
       publishedVersion: ${{ steps.version.outputs.VERSION }}
       publishedImageTag: ${{ steps.version.outputs.IMAGE_TAG }}
+      publishedImageFullName: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
