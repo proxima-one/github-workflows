@@ -38,11 +38,9 @@ on:
         required: false
       GOOGLE_CREDENTIALS:
         required: false
-      PROXIMA_API:
+      PROXIMA_GITHUB_USER:
         required: false
-      NETRC_USER:
-        required: false
-      NETRC_PASS:
+      PROXIMA_GITHUB_TOKEN:
         required: false
 
 jobs:
@@ -51,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOPRIVATE: github.com/proxima-one/block-indexer-api/api
-      API_ACCESS_TOKEN: ${{ secrets.PROXIMA_API }}
+      PROXIMA_GITHUB_TOKEN: ${{ secrets.PROXIMA_GITHUB_TOKEN }}
     defaults:
       run:
         working-directory: .
@@ -65,7 +63,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Setup credentials
-        run: git config --global url.https://$API_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
+        run: git config --global url.https://$PROXIMA_GITHUB_TOKEN@github.com/.insteadOf https://github.com/
 
       - name: Install dependencies
         run: go get ./...
@@ -85,10 +83,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: "Write .netrc"
-        # env:
-        #   NETRC_USER: ${{ secrets.NETRC_USER }}
-        #   NETRC_PASS: ${{ secrets.NETRC_PASS }}
-        run: echo "machine github.com login ${{ secrets.NETRC_USER }} password ${{ secrets.NETRC_PASS }}" > ./.netrc
+        run: echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > ./.netrc
 
       - name: Docker Login
         run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
