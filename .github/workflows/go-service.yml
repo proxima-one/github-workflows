@@ -117,10 +117,13 @@ jobs:
           DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
       - name: Push tags
         if: ${{ !inputs.preview }}
-        uses: actions-ecosystem/action-push-tag@v1
-        with:
-          tag: v${{ steps.version.outputs.VERSION }}
-          message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+        run: |
+          tag=v${{ steps.version.outputs.VERSION }}
+          message='v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "${tag}" -m "${message}"
+          git push origin "${tag}"
 
       - name: Push image
         run: |
