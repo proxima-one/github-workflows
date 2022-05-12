@@ -42,6 +42,16 @@ on:
         required: false
       PROXIMA_GITHUB_TOKEN:
         required: false
+    outputs:
+      publishedVersion: 
+        description: "Version of published image"
+        value: ${{ jobs.publish.outputs.publishedVersion }}
+      publishedImageTag: 
+        description: "Image tag of published image"
+        value: ${{ jobs.publish.outputs.publishedImageTag }}
+      publishedImageId: 
+        description: "Id (url without Docker registry) of published image"
+        value: ${{ jobs.publish.outputs.publishedImageId }}
 
 jobs:
   quick-check:
@@ -57,7 +67,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.17
+          go-version: 1.18
 
       - name: Checkout Code
         uses: actions/checkout@v2
@@ -77,6 +87,7 @@ jobs:
     outputs:
       publishedVersion: ${{ steps.version.outputs.VERSION }}
       publishedImageTag: ${{ steps.version.outputs.IMAGE_TAG }}
+      publishedImageId: ${{ steps.version.outputs.IMAGE_ID }}
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
@@ -97,12 +108,12 @@ jobs:
           else
             IMAGE_TAG=${{ inputs.appName }}-$VERSION
           fi
-          IMAGE_ID=${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo }}
-          IMAGE_FULL_NAME=$IMAGE_ID:$IMAGE_TAG
+          IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
+          IMAGE_FULL_NAME=${{ secrets.DOCKER_REGISTRY_URL }}$IMAGE_ID
           echo VERSION=$VERSION
           echo IMAGE_ID=$IMAGE_ID
-          echo IMAGE_TAG=$IMAGE_TAG
           echo IMAGE_FULL_NAME=$IMAGE_FULL_NAME
+          echo IMAGE_TAG=$IMAGE_TAG
           echo "::set-output name=VERSION::$VERSION"
           echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
           echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
@@ -112,10 +123,13 @@ jobs:
           DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
       - name: Push tags
         if: ${{ !inputs.preview }}
-        uses: actions-ecosystem/action-push-tag@v1
-        with:
-          tag: v${{ steps.version.outputs.VERSION }}
-          message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+        run: |
+          tag=v${{ steps.version.outputs.VERSION }}
+          message='v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "${tag}" -m "${message}"
+          git push origin "${tag}"
 
       - name: Push image
         run: |
