@@ -9,6 +9,10 @@ on:
         required: false
         default: proxima-one/default
         type: string
+      proximaNode:
+        required: false
+        default: "amur"
+        type: string
       preview:
         required: false
         default: true
@@ -66,9 +70,10 @@ jobs:
           comment-on-pr: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
+          PROXIMA_NODE: ${{ inputs.proximaNode }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.publishedImageId }}
-          VERSION: ${{inputs.publishedVersion}}
+          VERSION: ${{ inputs.publishedVersion }}
 
       - name: Pulumi apply changes
         if: ${{ !inputs.preview }}
@@ -78,6 +83,7 @@ jobs:
           command: up
           stack-name: ${{ inputs.stack }}
         env:
+          PROXIMA_NODE: ${{ inputs.proximaNode }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.publishedImageId }}
           VERSION: ${{ inputs.publishedVersion }}
