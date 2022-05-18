@@ -96,7 +96,7 @@ jobs:
       - name: "Write .netrc"
         run: echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > ./.netrc
 
-      - name: Docker Login
+      - name: "Docker Login"
         run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
       - name: "Read Version"
@@ -118,18 +118,10 @@ jobs:
           echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
           echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
           echo "::set-output name=IMAGE_ID::$IMAGE_ID"
+
       - name: Build Image
         run: |
           DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
-      - name: Push tags
-        if: ${{ !inputs.preview }}
-        run: |
-          tag=v${{ steps.version.outputs.VERSION }}
-          message='v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git tag -a "${tag}" -m "${message}"
-          git push origin "${tag}"
 
       - name: Push image
         run: |
