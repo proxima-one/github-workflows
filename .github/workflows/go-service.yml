@@ -103,11 +103,7 @@ jobs:
         id: version
         run: |
           VERSION=$(cat ./VERSION)
-          if [ "${{ inputs.preview }}" = "true" ]; then
-            IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
-          else
-            IMAGE_TAG=${{ inputs.appName }}-$VERSION
-          fi
+          IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
           IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
           IMAGE_FULL_NAME=${{ secrets.DOCKER_REGISTRY_URL }}$IMAGE_ID
           echo VERSION=$VERSION
