@@ -6,8 +6,8 @@ on:
         required: true
         type: string
       version:
-          required: true
-          type: string
+        required: true
+        type: string
       dockerfilePath:
         required: false
         default: ./Dockerfile
@@ -22,7 +22,6 @@ on:
 
 jobs:
   publish:
-      needs: version
       runs-on: ubuntu-latest
       steps:
         - name: "Checkout"
