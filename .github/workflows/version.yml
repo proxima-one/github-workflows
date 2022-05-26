@@ -21,6 +21,9 @@ on:
         imageId:
           description: "Id (url without Docker registry) of image"
           value: ${{ jobs.readVersion.outputs.imageId }}
+        imageFullName:
+          description: "URL (with Docker registry) of image"
+          value: ${{ jobs.readVersion.outputs.imageId }}
 
 jobs:
   readVersion:
@@ -29,6 +32,7 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
       imageTag: ${{ steps.version.outputs.IMAGE_TAG }}
       imageId: ${{ steps.version.outputs.IMAGE_ID }}
+      imageFullName: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
     steps:
       - name: "Read Version"
         id: version

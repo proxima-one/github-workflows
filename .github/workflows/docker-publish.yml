@@ -2,9 +2,12 @@ name: docker-publish
 on:
   workflow_call:
     inputs:
-      appName:
+      imageFullName:
         required: true
         type: string
+      version:
+          required: true
+          type: string
       dockerfilePath:
         required: false
         default: ./Dockerfile
@@ -26,14 +29,6 @@ on:
         required: false
 
 jobs:
-  version:
-    uses: proxima-one/github-workflows/.github/workflows/version.yml@master
-    with:
-      appName: ${{ inputs.appName }}
-      dockerRepo: ${{ inputs.dockerRepo }}
-    secrets:
-      DOCKER_REGISTRY_URL: ${{ secrets.DOCKER_REGISTRY_URL }}
-
   publish:
       needs: version
       runs-on: ubuntu-latest
@@ -49,9 +44,9 @@ jobs:
 
         - name: Build Image
           run: |
-            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ needs.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
 
         - name: Push image
           run: |
-            docker tag image ${{ needs.version.outputs.IMAGE_FULL_NAME }}
-            docker push ${{ needs.version.outputs.IMAGE_FULL_NAME }}
+            docker tag image ${{ inputs.imageFullName }}
+            docker push ${{ inputs.IMAGE_FULL_NAME }}
