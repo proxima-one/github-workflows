@@ -40,8 +40,7 @@ jobs:
       - name: "Read Version"
         id: version
         run: |
-          LS=$(ls)
-          echo $LS
+          ls
           VERSION=$(cat ./VERSION)
           IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
           IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
