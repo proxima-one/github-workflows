@@ -2,7 +2,7 @@ name: docker-publish
 on:
   workflow_call:
     inputs:
-      imageFullName:
+      imageId:
         required: true
         type: string
       version:
@@ -33,11 +33,11 @@ jobs:
         - name: "Docker Login"
           run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
-        - name: Build Image
+        - name: "Build Image"
           run: |
             DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
 
-        - name: Push image
+        - name: "Push image"
           run: |
-            docker tag image ${{ inputs.imageFullName }}
-            docker push ${{ inputs.IMAGE_FULL_NAME }}
+            docker tag image ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
+            docker push ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
