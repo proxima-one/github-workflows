@@ -12,9 +12,6 @@ on:
         required: false
         default: ./Dockerfile
         type: string
-      dockerRepo:
-        required: true
-        type: string
     secrets:
       DOCKER_REGISTRY_URL:
         required: false
