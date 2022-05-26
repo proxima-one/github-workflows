@@ -28,6 +28,9 @@ on:
 jobs:
   readVersion:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       imageTag: ${{ steps.version.outputs.IMAGE_TAG }}
