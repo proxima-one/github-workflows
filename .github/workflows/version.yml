@@ -28,9 +28,6 @@ on:
 jobs:
   readVersion:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       imageTag: ${{ steps.version.outputs.IMAGE_TAG }}
@@ -39,8 +36,8 @@ jobs:
     steps:
       - name: "Read Version"
         id: version
+        working-directory: .
         run: |
-          ls
           VERSION=$(cat ./VERSION)
           IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
           IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
