@@ -38,15 +38,5 @@ jobs:
         id: version
         working-directory: .
         run: |
-          VERSION=$(cat ./VERSION)
-          IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
-          IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
-          IMAGE_FULL_NAME=${{ secrets.DOCKER_REGISTRY_URL }}$IMAGE_ID
-          echo VERSION=$VERSION
-          echo IMAGE_ID=$IMAGE_ID
-          echo IMAGE_FULL_NAME=$IMAGE_FULL_NAME
-          echo IMAGE_TAG=$IMAGE_TAG
-          echo "::set-output name=VERSION::$VERSION"
-          echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
-          echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
-          echo "::set-output name=IMAGE_ID::$IMAGE_ID"
+          pwd
+          ls
