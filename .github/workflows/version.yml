@@ -1,0 +1,47 @@
+name: read-version
+on:
+  workflow_call:
+    inputs:
+      appName:
+        required: true
+        type: string
+      dockerRepo:
+        required: true
+        type: string
+    secrets:
+      DOCKER_REGISTRY_URL:
+        required: true
+    outputs:
+        version:
+          description: "Version of image"
+          value: ${{ jobs.readVersion.outputs.version }}
+        imageTag:
+          description: "Image tag of image"
+          value: ${{ jobs.readVersion.outputs.imageTag }}
+        imageId:
+          description: "Id (url without Docker registry) of image"
+          value: ${{ jobs.readVersion.outputs.imageId }}
+
+jobs:
+  readVersion:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      imageTag: ${{ steps.version.outputs.IMAGE_TAG }}
+      imageId: ${{ steps.version.outputs.IMAGE_ID }}
+    steps:
+      - name: "Read Version"
+        id: version
+        run: |
+          VERSION=$(cat ./VERSION)
+          IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
+          IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
+          IMAGE_FULL_NAME=${{ secrets.DOCKER_REGISTRY_URL }}$IMAGE_ID
+          echo VERSION=$VERSION
+          echo IMAGE_ID=$IMAGE_ID
+          echo IMAGE_FULL_NAME=$IMAGE_FULL_NAME
+          echo IMAGE_TAG=$IMAGE_TAG
+          echo "::set-output name=VERSION::$VERSION"
+          echo "::set-output name=IMAGE_TAG::$IMAGE_TAG"
+          echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
+          echo "::set-output name=IMAGE_ID::$IMAGE_ID"

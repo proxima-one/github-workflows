@@ -1,0 +1,34 @@
+name: go-check
+on:
+  workflow_call:
+    secrets:
+      PROXIMA_GITHUB_TOKEN:
+        required: true
+
+jobs:
+  quick-check:
+    name: Golang Tests
+    runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/proxima-one/block-indexer-api/api
+      PROXIMA_GITHUB_TOKEN: ${{ secrets.PROXIMA_GITHUB_TOKEN }}
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup credentials
+        run: git config --global url.https://$PROXIMA_GITHUB_TOKEN@github.com/.insteadOf https://github.com/
+
+      - name: Install dependencies
+        run: go get ./...
+
+      - name: Unit Tests
+        run: go test --short ./...

@@ -1,0 +1,57 @@
+name: docker-publish
+on:
+  workflow_call:
+    inputs:
+      appName:
+        required: true
+        type: string
+      dockerfilePath:
+        required: false
+        default: ./Dockerfile
+        type: string
+      dockerRepo:
+        required: false
+        default: proxima.one/services
+        type: string
+    secrets:
+      DOCKER_REGISTRY_URL:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      PROXIMA_GITHUB_USER:
+        required: false
+      PROXIMA_GITHUB_TOKEN:
+        required: false
+
+jobs:
+  version:
+    uses: proxima-one/github-workflows/.github/workflows/version.yml@master
+    with:
+      appName: ${{ inputs.appName }}
+      dockerRepo: ${{ inputs.dockerRepo }}
+    secrets:
+      DOCKER_REGISTRY_URL: ${{ secrets.DOCKER_REGISTRY_URL }}
+
+  publish:
+      needs: version
+      runs-on: ubuntu-latest
+      steps:
+        - name: "Checkout"
+          uses: actions/checkout@v2
+
+        - name: "Write .netrc"
+          run: echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > ./.netrc
+
+        - name: "Docker Login"
+          run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
+
+        - name: Build Image
+          run: |
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ needs.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
+
+        - name: Push image
+          run: |
+            docker tag image ${{ needs.version.outputs.IMAGE_FULL_NAME }}
+            docker push ${{ needs.version.outputs.IMAGE_FULL_NAME }}
