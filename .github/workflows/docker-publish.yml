@@ -13,8 +13,7 @@ on:
         default: ./Dockerfile
         type: string
       dockerRepo:
-        required: false
-        default: proxima.one/services
+        required: true
         type: string
     secrets:
       DOCKER_REGISTRY_URL:
@@ -22,10 +21,6 @@ on:
       DOCKER_USERNAME:
         required: false
       DOCKER_PASSWORD:
-        required: false
-      PROXIMA_GITHUB_USER:
-        required: false
-      PROXIMA_GITHUB_TOKEN:
         required: false
 
 jobs:
@@ -35,9 +30,6 @@ jobs:
       steps:
         - name: "Checkout"
           uses: actions/checkout@v2
-
-        - name: "Write .netrc"
-          run: echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > ./.netrc
 
         - name: "Docker Login"
           run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
