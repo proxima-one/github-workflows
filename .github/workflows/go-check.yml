@@ -10,7 +10,7 @@ jobs:
     name: Golang Tests
     runs-on: ubuntu-latest
     env:
-      GOPRIVATE: github.com/proxima-one/block-indexer-api/api
+      GOPRIVATE: github.com/proxima-one/*
       PROXIMA_GITHUB_TOKEN: ${{ secrets.PROXIMA_GITHUB_TOKEN }}
     defaults:
       run:
