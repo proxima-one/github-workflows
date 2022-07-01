@@ -84,9 +84,10 @@ jobs:
         if: ${{ !inputs.preview }}
         uses: pulumi/actions@v3
         with:
-          work-dir: ${{ inputs.pulumiPath }}
           command: up
+          work-dir: ${{ inputs.pulumiPath }}
           stack-name: ${{ inputs.stack }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_OWNER: ${{ inputs.githubOwner }}
           PROXIMA_NODE: ${{ inputs.proximaNode }}
