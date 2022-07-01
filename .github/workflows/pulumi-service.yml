@@ -23,10 +23,6 @@ on:
       publishedVersion:
         required: true
         type: string
-      githubOwner:
-        required: false
-        type: string
-        default: ""
     secrets:
       DOCKER_REGISTRY_URL:
         required: true
@@ -76,7 +72,6 @@ jobs:
           comment-on-pr: true
           github-token: ${{ secrets.GITHUB_ACCESS_TOKEN }}
         env:
-          GITHUB_OWNER: ${{ inputs.githubOwner }}
           PROXIMA_NODE: ${{ inputs.proximaNode }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.publishedImageId }}
@@ -92,7 +87,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_ACCESS_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
-          GITHUB_OWNER: ${{ inputs.githubOwner }}
           PROXIMA_NODE: ${{ inputs.proximaNode }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.publishedImageId }}
