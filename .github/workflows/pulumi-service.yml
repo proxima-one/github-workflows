@@ -89,6 +89,7 @@ jobs:
           stack-name: ${{ inputs.stack }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_OWNER: ${{ inputs.githubOwner }}
           PROXIMA_NODE: ${{ inputs.proximaNode }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
