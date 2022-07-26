@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs:
       appName:
-        required: true
+        required: false
         type: string
       dockerRepo:
         required: true
@@ -34,12 +34,18 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v2
 
+      - name: "Read Name"
+        if: ${{ inputs.appName != "" }}
+        run: |
+          echo ${{ inputs.appName }} > ./APP_NAME
+
       - name: "Read Version"
         id: version
         working-directory: .
         run: |
           VERSION=$(cat ./VERSION)
-          IMAGE_TAG=${{ inputs.appName }}-$VERSION-${GITHUB_SHA::7}
+          NAME=$(cat ./APP_NAME)
+          IMAGE_TAG=${{ NAME }}-$VERSION-${GITHUB_SHA::7}
           IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
           echo VERSION=$VERSION
           echo IMAGE_ID=$IMAGE_ID
