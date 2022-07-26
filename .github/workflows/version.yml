@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: "Read Name"
-        if: ${{ inputs.appName != "" }}
+        if: ${{ inputs.appName != '' }}
         run: |
           echo ${{ inputs.appName }} > ./APP_NAME
 
@@ -45,7 +45,7 @@ jobs:
         run: |
           VERSION=$(cat ./VERSION)
           NAME=$(cat ./APP_NAME)
-          IMAGE_TAG=${{ NAME }}-$VERSION-${GITHUB_SHA::7}
+          IMAGE_TAG=$NAME-$VERSION-${GITHUB_SHA::7}
           IMAGE_ID=/${{ inputs.dockerRepo }}:$IMAGE_TAG
           echo VERSION=$VERSION
           echo IMAGE_ID=$IMAGE_ID
