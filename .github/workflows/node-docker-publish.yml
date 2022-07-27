@@ -1,0 +1,52 @@
+name: docker-publish
+on:
+  workflow_call:
+    inputs:
+      imageId:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      dockerfilePath:
+        required: false
+        default: ./Dockerfile
+        type: string
+    secrets:
+      DOCKER_REGISTRY_URL:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+
+jobs:
+  publish:
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          working-directory: .
+      steps:
+        - name: "Checkout"
+          uses: actions/checkout@v2
+
+        - uses: actions/setup-node@v2
+          with:
+            node-version: '16.x'
+
+        - name: "Setup npm"
+          run: |
+            npm set @proxima-one:registry=https://npm.pkg.github.com
+            npm set "//npm.pkg.github.com/:_authToken=${{ secrets.CI_NPM_TOKEN }}"
+
+        - name: "Docker Login"
+          run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
+
+        - name: "Build Image"
+          run: |
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain  --secret id=npmrc,src=$HOME/.npmrc
+
+        - name: "Push image"
+          run: |
+            docker tag image ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
+            docker push ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
