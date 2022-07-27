@@ -19,6 +19,8 @@ on:
         required: false
       DOCKER_PASSWORD:
         required: false
+      CI_NPM_TOKEN:
+        required: false
 
 jobs:
   publish:
