@@ -38,7 +38,7 @@ on:
 jobs:
   update:
     name: ${{ (inputs.preview && 'Preview') || 'Up' }}
-    runs-on: ubuntu-latest
+    runs-on: proxima-runner
     steps:
       - name: Checkout latest changes
         uses: actions/checkout@v2

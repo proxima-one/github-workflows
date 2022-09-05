@@ -8,7 +8,7 @@ on:
 jobs:
   quick-check:
     name: Golang Tests
-    runs-on: ubuntu-latest
+    runs-on: proxima-runner
     env:
       GOPRIVATE: github.com/proxima-one/*
       PROXIMA_GITHUB_TOKEN: ${{ secrets.PROXIMA_GITHUB_TOKEN }}
