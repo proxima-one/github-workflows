@@ -14,10 +14,12 @@ on:
         type: string
     secrets:
       DOCKER_REGISTRY_URL:
-        required: false
+        required: true
       DOCKER_USERNAME:
-        required: false
+        required: true
       DOCKER_PASSWORD:
+        required: true
+      CI_NPM_TOKEN:
         required: false
 
 jobs:
@@ -26,16 +28,36 @@ jobs:
       defaults:
         run:
           working-directory: .
+      env:
+        npm_token: ${{ secrets.CI_NPM_TOKEN }}
       steps:
         - name: "Checkout"
           uses: actions/checkout@v2
+
+        - name: "Setup node"
+          if: ${{ env.npm_token != '' }}
+          uses: actions/setup-node@v2
+          with:
+            node-version: '16.x'
+
+        - name: "Setup npm"
+          if: ${{ env.npm_token != '' }}
+          run: |
+            npm set @proxima-one:registry=https://npm.pkg.github.com
+            npm set "//npm.pkg.github.com/:_authToken=${{ env.npm_token }}"
 
         - name: "Docker Login"
           run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
         - name: "Build Image"
+          if: ${{ env.npm_token == '' }}
           run: |
             DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
+
+        - name: "Build Image"
+          if: ${{ env.npm_token != '' }}
+          run: |
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
 
         - name: "Push image"
           run: |

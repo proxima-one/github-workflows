@@ -1,3 +1,4 @@
+# Deprecated. Use docker-publish.yml instead.
 name: docker-publish
 on:
   workflow_call:

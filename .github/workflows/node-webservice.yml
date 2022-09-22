@@ -115,7 +115,7 @@ jobs:
   publish:
     if: ${{ inputs.publish }}
     needs: version
-    uses: proxima-one/github-workflows/.github/workflows/node-docker-publish.yml@master
+    uses: ./.github/workflows/docker-publish.yml
     with:
       imageId: ${{ needs.version.outputs.imageFullName }}
       version: ${{ needs.version.outputs.version }}
