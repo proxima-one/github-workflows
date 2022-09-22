@@ -24,7 +24,7 @@ on:
       pulumiStack:
         required: false
         default: proxima-one/web-services
-        type: string      
+        type: string
       tagMessage:
         required: false
         default: "Release"
@@ -76,28 +76,18 @@ jobs:
       - name: Test
         run: yarn test
 
-  publish:
+  version:
     if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
     needs: quick-check
     outputs:
-      publishedVersion: ${{ steps.version.outputs.VERSION }}
-      publishedImageTag: ${{ steps.version.outputs.IMAGE_TAG }}
-    runs-on: ubuntu-latest
+      version: ${{ steps.version.outputs.VERSION }}
+      imageTag: ${{ steps.version.outputs.IMAGE_TAG }}
+      imageFullName: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+      imageId: ${{ steps.version.outputs.IMAGE_ID }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v2
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '16.x'
-
-      - name: "Setup npm"
-        run: |
-          npm set @proxima-one:registry=https://npm.pkg.github.com
-          npm set "//npm.pkg.github.com/:_authToken=${{ secrets.CI_NPM_TOKEN }}"
-
-      - name: Docker Login
-        run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
       - name: "Read Version"
         id: version
@@ -109,7 +99,7 @@ jobs:
             IMAGE_TAG=${{ inputs.appName }}-$VERSION
           fi
 
-          IMAGE_ID=${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo }}
+          IMAGE_ID=/${{ inputs.dockerRepo }}
           IMAGE_FULL_NAME=$IMAGE_ID:$IMAGE_TAG
 
           echo VERSION=$VERSION
@@ -122,39 +112,41 @@ jobs:
           echo "::set-output name=IMAGE_FULL_NAME::$IMAGE_FULL_NAME"
           echo "::set-output name=IMAGE_ID::$IMAGE_ID"
 
-      - name: Build Image
-        run: |
-          DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ steps.version.outputs.VERSION }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
+  publish:
+    if: ${{ inputs.publish }}
+    needs: version
+    uses: proxima-one/github-workflows/.github/workflows/node-docker-publish.yml@master
+    with:
+      imageId: ${{ needs.version.outputs.imageFullName }}
+      version: ${{ needs.version.outputs.version }}
+      dockerfilePath: ${{ inputs.dockerfilePath }}
+    secrets:
+      DOCKER_REGISTRY_URL: ${{ secrets.DOCKER_REGISTRY_URL }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      CI_NPM_TOKEN: ${{ secrets.CI_NPM_TOKEN }}
 
-#       - name: Push tags
-#         if: ${{ !inputs.preview }}
-#         uses: actions-ecosystem/action-push-tag@v1
-#         with:
-#           tag: v${{ steps.version.outputs.VERSION }}
-#           message: 'v${{ steps.version.outputs.VERSION }}: ${{ inputs.tagMessage }}'
-
-      - name: Push image
-        run: |
-          docker tag image ${{ steps.version.outputs.IMAGE_FULL_NAME }}
-          docker push ${{ steps.version.outputs.IMAGE_FULL_NAME }}
-
+  comment:
+    if: ${{ inputs.publish && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs: [version, publish]
+    steps:
       - name: Comment a version
-        if: ${{ github.event_name == 'pull_request' }}
         uses: mb2dev/github-action-comment-pull-request@1.0.0
         with:
           message: |
             Released new version.
 
             App: ${{ inputs.appName }}
-            Version: ${{ steps.version.outputs.IMAGE_TAG }}
-            Image: ${{ steps.version.outputs.IMAGE_FULL_NAME }}
+            Version: ${{ needs.version.outputs.imageTag }}
+            Image: ${{ needs.version.outputs.imageFullName }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy: 
+  deploy:
     if: ${{ inputs.deploy }}
     name: Pulumi ${{ (inputs.preview && 'Preview') || 'Up' }}
     runs-on: ubuntu-latest
-    needs: publish
+    needs: [version, publish]
     steps:
       - name: Checkout latest changes
         uses: actions/checkout@v2
@@ -184,8 +176,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo}}:${{needs.publish.outputs.publishedImageTag}}
-          VERSION: ${{needs.publish.outputs.publishedVersion}}
+          IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo}}:${{needs.version.outputs.imageTag}}
+          VERSION: ${{needs.version.outputs.version}}
 
       - name: Pulumi apply changes
         if: ${{ !inputs.preview }}
@@ -196,5 +188,5 @@ jobs:
           stack-name: ${{ inputs.pulumiStack }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo}}:${{needs.publish.outputs.publishedImageTag}}
-          VERSION: ${{needs.publish.outputs.publishedVersion}}
+          IMAGE_NAME: ${{ secrets.DOCKER_REGISTRY_URL }}/${{ inputs.dockerRepo}}:${{needs.version.outputs.imageTag}}
+          VERSION: ${{needs.version.outputs.version}}
