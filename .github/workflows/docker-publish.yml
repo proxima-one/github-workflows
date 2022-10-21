@@ -21,6 +21,10 @@ on:
         required: true
       CI_NPM_TOKEN:
         required: false
+      PROXIMA_GITHUB_TOKEN:
+        required: false
+      PROXIMA_GITHUB_USER:
+        required: false
 
 jobs:
   publish:
@@ -30,6 +34,8 @@ jobs:
           working-directory: .
       env:
         npm_token: ${{ secrets.CI_NPM_TOKEN }}
+        github_token: ${{ secrets.PROXIMA_GITHUB_TOKEN }}
+        github_user: ${{ secrets.PROXIMA_GITHUB_USER }}
       steps:
         - name: "Checkout"
           uses: actions/checkout@v2
@@ -46,18 +52,23 @@ jobs:
             npm set @proxima-one:registry=https://npm.pkg.github.com
             npm set "//npm.pkg.github.com/:_authToken=${{ env.npm_token }}"
 
+        - name: "Check github user"
+          if: ${{ env.github_token != '' && env.github_user != '' }}
+          run: |
+            echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > $HOME/.netrc
+
         - name: "Docker Login"
           run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
         - name: "Build Image"
-          if: ${{ env.npm_token == '' }}
           run: |
-            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
-
-        - name: "Build Image"
-          if: ${{ env.npm_token != '' }}
-          run: |
-            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
+            if [ $npm_token != "" ]; then
+              DOCKERSECRETS="--secret id=npmrc,src=$HOME/.npmrc"
+            fi
+            if [ $github_token != "" -a $github_user != "" ]; then
+              DOCKERSECRETS="$DOCKERSECRETS --secret id=netrc,src=$HOME/.netrc"
+            fi
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain $DOCKERSECRETS
 
         - name: "Push image"
           run: |
