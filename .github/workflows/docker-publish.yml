@@ -49,15 +49,18 @@ jobs:
         - name: "Docker Login"
           run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
+        - name: "Write .netrc"
+          run: echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > $HOME/.netrc
+
         - name: "Build Image"
           if: ${{ env.npm_token == '' }}
           run: |
-            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=netrc,src=$HOME/.netrc
 
         - name: "Build Image"
           if: ${{ env.npm_token != '' }}
           run: |
-            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain --secret id=npmrc,src=$HOME/.npmrc --secret id=netrc,src=$HOME/.netrc
 
         - name: "Push image"
           run: |
