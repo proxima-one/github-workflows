@@ -82,7 +82,7 @@ jobs:
 
           echo "Publishing canary version"
 
-          lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access > publish_output
+          lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access &> publish_outpout
 
       - name: "Version and publish"
         if: ${{ !inputs.preview }}
