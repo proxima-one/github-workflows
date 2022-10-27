@@ -76,8 +76,6 @@ jobs:
         if: ${{ inputs.preview }}
         env:
           GH_TOKEN: ${{ secrets.CI_NPM_TOKEN }}
-        outputs:
-          published_versions: ${{  }}
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
