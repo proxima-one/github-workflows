@@ -82,8 +82,7 @@ jobs:
 
           echo "Publishing canary version"
 
-          lerna_output=$(lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access)
-          echo $lerna_output | sed -n 's/^ - \(@.\+@.\+\)$/\1/p'
+          lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access) | sed -n 's/^lerna success published \(@.* .*\)$/\1/p'
 
       - name: "Version and publish"
         if: ${{ !inputs.preview }}
