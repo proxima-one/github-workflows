@@ -79,12 +79,8 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          
-          git status 
 
-          echo "Publishing canary version"
-
-          lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access &> publish_output
+          lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access 2>&1 | tee publish_output
           published_versions=$(sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output)
           rm publish_output
           
@@ -97,9 +93,10 @@ jobs:
         uses: mb2dev/github-action-comment-pull-request@1.0.0
         with:
           message: |
-            Released new canary packages:
-            
+            <b>Released new canary packages:</b>
+            ```
             ${{ env.PUBLISHED_VERSIONS }}
+            ```
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Version and publish"
