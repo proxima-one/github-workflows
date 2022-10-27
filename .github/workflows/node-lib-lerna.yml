@@ -85,7 +85,7 @@ jobs:
           echo "Publishing canary version"
 
           lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access &> publish_output
-          echo "published_versions=$(sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output | tr '\n' '#')" >> $GITHUB_OUTPUT
+          echo "published_versions=$(sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output | tr '\n' '%0A')" >> $GITHUB_OUTPUT
           rm publish_output
 
       - name: Comment a version
