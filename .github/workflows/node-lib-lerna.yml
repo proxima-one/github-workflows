@@ -19,6 +19,9 @@ on:
         required: true
       CI_PUBLIC_NPM_TOKEN:
         required: false
+      GITHUB_TOKEN:
+        required: false
+
 jobs:
   quick-check:
     runs-on: ubuntu-latest
@@ -71,9 +74,12 @@ jobs:
           yarn install
 
       - name: Publish Canary Version
+        id: publish_canary
         if: ${{ inputs.preview }}
         env:
           GH_TOKEN: ${{ secrets.CI_NPM_TOKEN }}
+        outputs:
+          published_versions: ${{  }}
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
@@ -83,8 +89,18 @@ jobs:
           echo "Publishing canary version"
 
           lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access &> publish_output
-          sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output
+          echo "published_versions=$(sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output)" >> $GITHUB_OUTPUT
           rm publish_output
+
+      - name: Comment a version
+        if: ${{ github.event_name == 'pull_request' && inputs.preview }}
+        uses: mb2dev/github-action-comment-pull-request@1.0.0
+        with:
+          message: |
+            Released new canary packages:
+            
+            ${{ steps.publish_canary.outputs.published_versions }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Version and publish"
         if: ${{ !inputs.preview }}
