@@ -85,8 +85,12 @@ jobs:
           echo "Publishing canary version"
 
           lerna publish --canary --preid ${{ inputs.preid }}.${{ github.run_number }} --dist-tag ${{ inputs.preid }} --yes --no-verify-access &> publish_output
-          echo "published_versions=$(sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output | tr '%' '%25' | tr '\n' '%0A' | tr '\r' '%0D')" >> $GITHUB_OUTPUT
+          published_versions=$(sed -n 's/^lerna success published \(@.* .*\)$/\1/p' publish_output)
           rm publish_output
+          
+          echo "PUBLISHED_VERSIONS<<EOF" >> $GITHUB_ENV
+          echo "$published_versions" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Comment a version
         if: ${{ github.event_name == 'pull_request' && inputs.preview }}
@@ -95,7 +99,7 @@ jobs:
           message: |
             Released new canary packages:
             
-            ${{ steps.publish_canary.outputs.published_versions }}
+            ${{ env.PUBLISHED_VERSIONS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Version and publish"
