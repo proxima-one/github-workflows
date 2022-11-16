@@ -74,3 +74,13 @@ jobs:
           run: |
             docker tag image ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
             docker push ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
+                      
+        - name: Comment a version
+          if: ${{ github.event_name == 'pull_request' }}
+          uses: mb2dev/github-action-comment-pull-request@1.0.0
+          with:
+            message: |
+              Published new docker image
+              Version: ${{ inputs.version }}
+              Image: ${{ inputs.imageId }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
