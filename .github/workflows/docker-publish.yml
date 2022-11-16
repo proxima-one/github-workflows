@@ -82,5 +82,5 @@ jobs:
             message: |
               Published new docker image
               Version: ${{ inputs.version }}
-              Image: ${{ inputs.imageId }}
+              Image: ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
