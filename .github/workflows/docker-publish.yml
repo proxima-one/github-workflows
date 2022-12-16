@@ -14,10 +14,16 @@ on:
         type: string
     secrets:
       DOCKER_REGISTRY_URL:
-        required: false
+        required: true
       DOCKER_USERNAME:
-        required: false
+        required: true
       DOCKER_PASSWORD:
+        required: true
+      CI_NPM_TOKEN:
+        required: false
+      PROXIMA_GITHUB_TOKEN:
+        required: false
+      PROXIMA_GITHUB_USER:
         required: false
 
 jobs:
@@ -26,18 +32,55 @@ jobs:
       defaults:
         run:
           working-directory: .
+      env:
+        npm_token: ${{ secrets.CI_NPM_TOKEN }}
+        github_token: ${{ secrets.PROXIMA_GITHUB_TOKEN }}
+        github_user: ${{ secrets.PROXIMA_GITHUB_USER }}
       steps:
         - name: "Checkout"
           uses: actions/checkout@v2
+
+        - name: "Setup node"
+          if: ${{ env.npm_token != '' }}
+          uses: actions/setup-node@v2
+          with:
+            node-version: '16.x'
+
+        - name: "Setup npm"
+          if: ${{ env.npm_token != '' }}
+          run: |
+            npm set @proxima-one:registry=https://npm.pkg.github.com
+            npm set "//npm.pkg.github.com/:_authToken=${{ env.npm_token }}"
+
+        - name: "Check github user"
+          if: ${{ env.github_token != '' && env.github_user != '' }}
+          run: |
+            echo "machine github.com login ${{ secrets.PROXIMA_GITHUB_USER }} password ${{ secrets.PROXIMA_GITHUB_TOKEN }}" > $HOME/.netrc
 
         - name: "Docker Login"
           run: docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}" ${{ secrets.DOCKER_REGISTRY_URL }}
 
         - name: "Build Image"
           run: |
-            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain
+            if [ $npm_token != "" ]; then
+              DOCKERSECRETS="--secret id=npmrc,src=$HOME/.npmrc"
+            fi
+            if [ $github_token != "" -a $github_user != "" ]; then
+              DOCKERSECRETS="$DOCKERSECRETS --secret id=netrc,src=$HOME/.netrc"
+            fi
+            DOCKER_BUILDKIT=1 docker build . --build-arg BUILD_VERSION=${{ inputs.version }} --tag image --file ${{ inputs.dockerfilePath }} --target prod --progress=plain $DOCKERSECRETS
 
         - name: "Push image"
           run: |
             docker tag image ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
             docker push ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
+                      
+        - name: Comment a version
+          if: ${{ github.event_name == 'pull_request' }}
+          uses: mb2dev/github-action-comment-pull-request@1.0.0
+          with:
+            message: |
+              Published new docker image
+              Version: ${{ inputs.version }}
+              Image: ${{ secrets.DOCKER_REGISTRY_URL }}${{ inputs.imageId }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
