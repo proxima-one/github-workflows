@@ -39,6 +39,8 @@ jobs:
   update:
     name: ${{ (inputs.preview && 'Preview') || 'Up' }}
     runs-on: ubuntu-latest
+    env:
+      USE_GKE_GCLOUD_AUTH_PLUGIN: True
     steps:
       - name: Checkout latest changes
         uses: actions/checkout@v2
