@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
         working-directory: ${{ inputs.pulumiPath }}
-          
+      
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
         with:
@@ -68,7 +68,7 @@ jobs:
 
       - name: Pulumi preview changes
         if: ${{ inputs.preview }}
-        uses: pulumi/actions@v3
+        uses: pulumi/actions@v4
         with:
           command: preview
           work-dir: ${{ inputs.pulumiPath }}
@@ -82,7 +82,7 @@ jobs:
 
       - name: Pulumi apply changes
         if: ${{ !inputs.preview }}
-        uses: pulumi/actions@v3
+        uses: pulumi/actions@v4
         with:
           command: up
           work-dir: ${{ inputs.pulumiPath }}
